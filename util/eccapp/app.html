@@ -17,7 +17,7 @@
 			<img src="images/ecc-logo-with-words.jpg" style="height:50px;">
 		</h1>
 		<h2 style="color:#0f4156; font-weight: 800;">
-			App 1.1.0
+			App 1.1.1
 		</h2>
 		<div><a href="docs/CICC ECC Technical Guide.pdf" target="_blank">CICC ECC Technical Guide (PDF)</a></div>
 		<div id="ecc-app-status-message"></div>
@@ -29,6 +29,10 @@
 			<li class="nav-item">
 				<a class="nav-link active" id="voting-tab" data-toggle="tab" href="#voting" role="tab"
 					aria-controls="voting" aria-selected="false">Voting</a>
+			</li>
+			<li class="nav-item">
+				<a class="nav-link" id="view-transaction-tab" data-toggle="tab" href="#view-transaction" role="tab"
+					aria-controls="view-transaction" aria-selected="false">View Transaction Data</a>
 			</li>
 			<li class="nav-item">
 				<a class="nav-link" id="backup-ab" data-toggle="tab" href="#backup" role="tab" aria-controls="backup"
@@ -126,6 +130,22 @@
 				</div>
 
 			</div>
+
+			<div class="tab-pane fade" id="view-transaction" role="tabpanel" aria-labelledby="view-transaction-tab">
+				<h4 class="mb-3" style="color:#0f4156; font-weight: 800;">View Governance Transaction Data</h4>
+				<div class="form-group">
+					<div><label class="text-dark font-weight-bold mb-0" for="transactionGovernanceFile">Transaction File
+							(.json)</label></div>
+					<div class="text-secondary mb-1">In the shared folder in the /transaction folder.</div>
+					<input type="file" id="transactionGovernanceFile" accept=".json">
+				</div>
+				<div class="form-group mt-3">
+					<button onclick="viewTransactionGovernanceFile()" class="btn btn-primary">View</button>
+				</div>
+				<div class="form-group mt-3 text-dark" id="view-transaction-notes-view">
+				</div>
+			</div>
+
 			<div class="tab-pane fade" id="backup" role="tabpanel" aria-labelledby="backup-tab">
 				<div class="mt-2 mb-3 text-danger">Only use the functions on this tab in a browser on your offline/cold
 					computer.</div>
@@ -201,9 +221,10 @@
 <script src="js/nacl-util.min.js"></script>
 <script src="js/jsrsasign-all-min-good.js"></script>
 <script src="js/blake2b.js"></script>
+<script src="js/cbor-web.min.js"></script>
 <script src="js/cbor.js"></script>
 <script src="js/crypto-js.js"></script>
 
-<script src="js/app-1.1.0.js"></script>
+<script src="js/app-1.1.1.js"></script>
 
 </html>
