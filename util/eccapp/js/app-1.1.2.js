@@ -889,7 +889,7 @@ async function viewTransactionGovernanceFile()
 			ccKey: eccCCKeyHex,
 			govTxID: txIdHex.slice(0, -2),
 			hash: txHashHex,
-			vote: (voteData[0] == 1 ? 'Yes (Constitutional)' : voteData[0] == 2 ? 'No  (Unconstitutional)' : 'Abstain')
+			vote: (voteData[0] == 1 ? 'Yes (Constitutional)' : voteData[0] == 0 ? 'No  (Unconstitutional)' : 'Abstain')
 		}
 
 		$('#view-transaction-notes-view')
