@@ -545,13 +545,19 @@ window.eccapp.crypto.witnessTransactionHash = function (privateKey, transactionH
 }
 
 async function handleFiles() {
+	// See code below for update.
 	const privateKeyFile = document.getElementById('privateKeyFile').files[0];
 	const privateKeyFileCardano = document.getElementById('privateKeyFileCardano').files[0];
 	const transactionFile = document.getElementById('transactionFile').files[0];
 	const transactionHashFile = document.getElementById('transactionHashFile').files[0];
 
 	if ((!privateKeyFile && !privateKeyFileCardano) || (!transactionFile && !transactionHashFile)) {
-		alert('Please select both private key and transaction files.');
+		alert('Please select both private key (.pem) and transaction hash file (.hash).');
+		return;
+	}
+
+	if ((!privateKeyFile && !privateKeyFileCardano) || (!transactionFile && !transactionHashFile)) {
+		alert('Please select both private key (.pem) and transactionfile (.hash or .json)');
 		return;
 	}
 
@@ -656,6 +662,99 @@ async function handleFiles() {
 		URL.revokeObjectURL(url);
 	}
 }
+
+/*
+
+async function handleFiles() {
+    const privateKeyFile = document.getElementById('privateKeyFile').files[0];
+    const privateKeyFileCardano = document.getElementById('privateKeyFileCardano').files[0];
+    const transactionFile = document.getElementById('transactionFile').files[0];
+    const transactionHashFile = document.getElementById('transactionHashFile').files[0];
+    const transactionHashTextarea = document.getElementById('transactionHashTextarea').value.trim();
+
+    if ((!privateKeyFile && !privateKeyFileCardano) || (!transactionFile && !transactionHashFile && !transactionHashTextarea)) {
+        alert('Please select both private key (.pem) and transaction hash file (.hash) or enter a transaction hash.');
+        return;
+    }
+
+    let privateKey;
+    let privateKeyPEM;
+
+    console.log('Loading Private Key From File');
+
+    if (privateKeyFile) {
+        privateKeyPEM = await privateKeyFile.text();
+    }
+
+    if (privateKeyFileCardano) {
+        const privateKeyCardano = await privateKeyFileCardano.text();
+        privateKey = eccapp.crypto.extractCardanoKey(privateKeyCardano);
+    }
+
+    if (!privateKeyPEM && !privateKey) {
+        console.log('Error Loading the PEM File');
+        return;
+    }
+
+    if (!privateKey) {
+        privateKey = eccapp.crypto.extractPrivateKeyFromPEM(privateKeyPEM);
+        console.log('Private Key Loaded');
+    }
+
+    let transactionHash;
+    
+    if (transactionHashFile) {
+        transactionHash = await transactionHashFile.text();
+        console.log('Transaction Hash Loaded from File');
+    } else if (transactionHashTextarea) {
+        transactionHash = transactionHashTextarea;
+        console.log('Transaction Hash Loaded from Textarea');
+    }
+
+    if (!transactionHash) {
+        alert('Transaction hash is required. Please upload a .hash file or enter it manually.');
+        return;
+    }
+
+    console.log('Witnessing Hash');
+    let witnessedTx = eccapp.crypto.witnessTransactionHash(privateKey, transactionHash);
+
+    let witnessFileName = transactionHashFile?.name?.replace('.hash', '') || 'manual-hash';
+    witnessFileName += '-' + (privateKeyFile?.name?.replace('.pem', '').replace('member-', '') || 'unknown') + '.witness';
+
+    console.log('Save Witnessed Hash To File');
+    console.log(witnessFileName);
+
+    let path = '/mainnet';
+    if (witnessFileName.indexOf('sancho') !== -1) {
+        path = '/sanchonet';
+    }
+
+    $('#voting-notes-view').html(
+        [
+            '<div class="font-weight-bold">You Just Signed as a Witness Vote Tx ID (Hash)</div>',
+            '<div class="mb-3">', transactionHash, '</div>',
+            '<div class="font-weight-bold">Next Steps:</div>',
+            '<ol>',
+            '<li class="mt-2">Copy the <em>' + witnessFileName + '</em> file to your USB-T drive.</li>',
+            '<li class="mt-2">Insert the USB-T into your online computer.</li>',
+            '<li class="mt-2">Copy the <em>' + witnessFileName + '</em> file to the "<em>' + witnessFileName.replace('.witness', '') + '</em>" folder at "CICC-ECC Shared Drive" /technical/operations/members/voting' + path + '.</li>',
+            '</ol>',
+            '<div class="font-weight-bold mt-2 text-danger">[!] Once all steps have been completed, power down your computer, so as to clear all private key data from memory.</div>',
+        ].join(''));
+
+    const blob = new Blob([JSON.stringify(witnessedTx, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = witnessFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+}
+
+*/
 
 // BACK UP
 
@@ -871,45 +970,72 @@ async function viewTransactionGovernanceFile()
 		console.log('CC Key Hex: ' + eccCCKeyHex);
 
 		const eccCCKeyData = tranGovData[eccCCKeyBytes];
-		const txIdBytes = Object.keys(eccCCKeyData)[0];
+		const _eccCCKeyData = Object.keys(eccCCKeyData);
 
-		const txIdByteArray = txIdBytes.split(',').map(byte => parseInt(byte, 10));
-		const txIdHex = txIdByteArray.map(b => b.toString(16).padStart(2, '0')).join('');
+		console.log(_eccCCKeyData);
 
-		console.log("Gov Action Tx-ID:", txIdHex);
+		const govActionsCount = _eccCCKeyData.length;
+		console.log('govActionsCount', govActionsCount);
 
-		const voteData = eccCCKeyData[txIdBytes];
+		var voteTxHash;
+		var voteCCKey;
 
-		console.log("Vote Choice:", voteData[0]);
-		console.log("Vote URL:", voteData[1][0]);
+		let html = [];
 
-		voteTransaction =
+		_eccCCKeyData.forEach(function (data, index)
 		{
-			url: voteData[1][0],
-			ccKey: eccCCKeyHex,
-			govTxID: txIdHex.slice(0, -2),
-			hash: txHashHex,
-			vote: (voteData[0] == 1 ? 'Yes (Constitutional)' : voteData[0] == 0 ? 'No  (Unconstitutional)' : 'Abstain')
-		}
+			const txIdBytes = Object.keys(eccCCKeyData)[index];
 
-		$('#view-transaction-notes-view')
-			.html(	'<div class="font-weight-bold">Gov Action Tx ID (Hash)</div>' +
+			const txIdByteArray = txIdBytes.split(',').map(byte => parseInt(byte, 10));
+			const txIdHex = txIdByteArray.map(b => b.toString(16).padStart(2, '0')).join('');
+
+			console.log("Gov Action Tx-ID:", txIdHex);
+
+			const voteData = eccCCKeyData[txIdBytes];
+
+			console.log("Vote Choice:", voteData[0]);
+			console.log("Vote URL:", voteData[1][0]);
+
+			let voteDecision = 'Unknown';
+
+			if (voteData[0] == 0) {voteDecision = 'No  (Unconstitutional)'};
+			if (voteData[0] == 1) {voteDecision = 'Yes (Constitutional)'};
+			if (voteData[0] == 2) {voteDecision = 'Abstain'};
+			
+			const voteTransaction =
+			{
+				url: voteData[1][0],
+				ccKey: eccCCKeyHex,
+				govTxID: txIdHex.slice(0, -2),
+				hash: txHashHex,
+				vote: voteDecision
+			}
+
+			html.push('<div class="font-weight-bold">Gov Action Tx ID (Hash)</div>' +
 					'<div class="mb-3">' + voteTransaction.govTxID + '</div>' +
-					'<div class="font-weight-bold">ECC Public Certificate Key</div>' +
-					'<div class="mb-3">' + voteTransaction.ccKey + '</div>' +
 					'<div class="font-weight-bold">Rational URL</div>' +
 					'<div class="mb-3">' + voteTransaction.url + '</div>' +
 					'<div class="font-weight-bold">Vote</div>' +
-					'<div class="mb-3">' + voteTransaction.vote + '</div>' +
+					'<div class="mb-3">' + voteTransaction.vote + '</div><hr/>');
+
+			voteTxHash = voteTransaction.hash;
+			voteCCKey = voteTransaction.ccKey;
+		});
+
+		html.push('<div class="font-weight-bold">ECC Public Certificate Key</div>' +
+					'<div class="mb-3">' + voteCCKey + '</div>' +
 					'<div class="font-weight-bold">Vote Tx ID (Hash)</div>' +
-					'<div class="">' + voteTransaction.hash + '</div>');
+					'<div class="">' + voteTxHash + '</div>')
+		
+		$('#view-transaction-notes-view')
+			.html(html.join(''));
 	}
 }
 
 // INIT
 
 window.eccapp.init = function () {
-	console.log('ECC App Version 1.1.0');
+	console.log('ECC App Version 1.1.4');
 
 	document.getElementById('ecc-app-create-x509-identity').addEventListener('click', function () {
 		$('#ecc-app-create-x509-identity').addClass('disabled');
